@@ -81,13 +81,17 @@ class Cube{
 
     move(direction){
         switch(direction){
-            case "w": this.cube.position.z -= speed;
+            case "w": if(this.cube.position.z >-45)
+            this.cube.position.z -= speed;
             break;
-            case "s": this.cube.position.z += speed;
+            case "s": if(this.cube.position.z < 45)
+            this.cube.position.z += speed;
             break;
-            case "a": this.cube.position.x -= speed;
+            case "a": if(this.cube.position.x >-45)
+            this.cube.position.x -= speed;
             break;
-            case "d": this.cube.position.x += speed;
+            case "d": if(this.cube.position.x < 45)
+            this.cube.position.x += speed;
             break;
         }
     }
