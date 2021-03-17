@@ -33,7 +33,7 @@ io.on('connection', socket => {
     });
 
     socket.on('disconnect',() => {
-        cubes[socket.username] = null;
+        delete cubes[socket.username];
         socket.broadcast.emit("disconnected",socket.username);
     });
 });
@@ -42,4 +42,4 @@ app.get("/",(req,res)=>{
     res.sendFile("index.html");
 });
 
-server.listen(process.env.PORT);
+server.listen(3000 || process.env.PORT);

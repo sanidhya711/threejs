@@ -11,6 +11,7 @@ socket.on("newCube", username => {
 });
 
 socket.on("positions",data=>{
+    console.log(data);
     Object.keys(data).forEach(function(key){
         cubes[data[key].username] = new Cube(data[key].x,data[key].y,data[key].z);
     });
