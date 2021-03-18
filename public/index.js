@@ -1,5 +1,6 @@
 import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
+// (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 const socket = io();
 
 var username;
@@ -87,13 +88,24 @@ class Cube{
             case "s": if(this.cube.position.z < 45)
             this.cube.position.z += speed;
             break;
-            case "a": if(this.cube.position.x >-45)
+            case "a": if(this.cube.position.x > -45)
             this.cube.position.x -= speed;
             break;
             case "d": if(this.cube.position.x < 45)
             this.cube.position.x += speed;
             break;
         }
+
+        // for (var vertexIndex = 0; vertexIndex < this.cube.geometry.vertices.length; vertexIndex++){       
+        //     var localVertex = this.cube.geometry.vertices[vertexIndex].clone();
+        //     var globalVertex = this.cube.matrix.multiplyVector3(localVertex);
+        //     var directionVector = globalVertex.subSelf(this.cube.Player.position);
+        //     var ray = new THREE.Ray(this.cube.Player.position,directionVector.clone().normalize());
+        //     var collisionResults = ray.intersectObjects( collidableMeshList );
+        //     if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()){
+        //         console.log("collision!!");
+        //     }
+        // }
     }
 
     setPosition(positionX,positionY,positionZ){
@@ -111,7 +123,7 @@ class Cube{
     }
 }
 
-var userCube = new Cube(0,5,0);
+var userCube = new Cube(0,5.5,0);
 
 var dirty = true;
 
@@ -144,6 +156,9 @@ function trackUserMovements(){
 }
 
 function keyDown(event){
+    if(event.keyCode == 13){
+        document.querySelector(".chatbox input").focus();
+    }
     keyboard[event.keyCode] = true;
 }
 function keyUp(event){
@@ -156,4 +171,52 @@ trackUserMovements();
 
 socket.on("disconnected",data=>{
     cubes[data].remove();
+});
+
+//chat
+document.querySelector(".chatbox input").addEventListener("focus",function(eve){
+    window.removeEventListener('keydown',keyDown);
+    window.removeEventListener('keyup',keyUp);
+    window.addEventListener("keydown",sendMessage);
+    eve.stopPropagation();
+    window.addEventListener("click",handleBlur);
+});
+
+document.querySelector(".chatbox input").addEventListener("blur",function(){
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+    window.removeEventListener("keydown",sendMessage);
+    window.removeEventListener("click",handleBlur);
+});
+
+function handleBlur(event){
+    if(event.target.nodeName == "CANVAS"){
+        document.querySelector(".chatbox input").blur();
+    }
+}
+
+function sendMessage(eve){
+    if(eve.keyCode == 13 &&  document.querySelector(".chatbox input").value!=""){
+        var message = document.querySelector(".chatbox input").value;
+        document.querySelector(".chatbox input").value = "";
+        document.querySelector(".chatbox input").blur();
+        socket.emit("message",{message:message,username:username});
+    }
+}
+
+socket.on("message",data=>{
+    var div = document.createElement("div");
+    div.className = "message"
+    div.innerText = data.username+":     "+data.message;
+    document.querySelector(".messages").appendChild(div);
+    document.querySelector(".messages").scrollTop =  document.querySelector(".messages").scrollHeight;
+});
+
+
+
+
+document.addEventListener('visibilitychange', function(){
+   if(document.visibilityState=="hidden"){
+       keyboard = {};
+   }
 });

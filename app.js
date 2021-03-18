@@ -9,6 +9,10 @@ var cubes = {}
 
 io.on('connection', socket => {
 
+    socket.on("message",data=>{
+        io.emit("message",data);
+    });
+
     socket.username = usernames;
     socket.broadcast.emit("newCube",usernames);
 
@@ -21,7 +25,7 @@ io.on('connection', socket => {
             x:data.x,
             y:data.y,
             z:data.z,
-            username:socket.username
+            username:socket.usernamse
         }
         var dataToEmit = {
             x:data.x,
@@ -42,4 +46,4 @@ app.get("/",(req,res)=>{
     res.sendFile("index.html");
 });
 
-server.listen(process.env.PORT);
+server.listen(3000);
