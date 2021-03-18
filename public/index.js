@@ -50,14 +50,14 @@ function init(){
 
     var material = new THREE.MeshBasicMaterial({wireframe:true,color:"black"});
 
-    var floorGeometry = new THREE.PlaneGeometry(100,100,20,20);
+    var floorGeometry = new THREE.PlaneGeometry(200,200,20,20);
     var floor = new THREE.Mesh(floorGeometry,material);
     floor.rotation.x = Math.PI/2;
     scene.add(floor);
 
     controls = new OrbitControls(camera,renderer.domElement);
-    controls.minDistance = 70;
-    controls.maxDistance = 175;
+    controls.minDistance = 50;
+    controls.maxDistance = 275;
     animate();
 }
 
@@ -82,17 +82,25 @@ class Cube{
 
     move(direction){
         switch(direction){
-            case "w": if(this.cube.position.z >-45)
+            case "w": if(this.cube.position.z >-90)
             this.cube.position.z -= speed;
+            camera.position.z = this.cube.position.z-50;
+            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
-            case "s": if(this.cube.position.z < 45)
+            case "s": if(this.cube.position.z < 90)
             this.cube.position.z += speed;
+            camera.position.z = this.cube.position.z-50;
+            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
-            case "a": if(this.cube.position.x > -45)
+            case "a": if(this.cube.position.x > -90)
             this.cube.position.x -= speed;
+            camera.position.x = this.cube.position.x-50;
+            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
-            case "d": if(this.cube.position.x < 45)
+            case "d": if(this.cube.position.x < 90)
             this.cube.position.x += speed;
+            camera.position.x = this.cube.position.x-50;
+            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
         }
 
