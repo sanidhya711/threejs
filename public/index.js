@@ -84,23 +84,15 @@ class Cube{
         switch(direction){
             case "w": if(this.cube.position.z >-90)
             this.cube.position.z -= speed;
-            camera.position.z = this.cube.position.z-50;
-            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
             case "s": if(this.cube.position.z < 90)
             this.cube.position.z += speed;
-            camera.position.z = this.cube.position.z-50;
-            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
             case "a": if(this.cube.position.x > -90)
             this.cube.position.x -= speed;
-            camera.position.x = this.cube.position.x-50;
-            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
             case "d": if(this.cube.position.x < 90)
             this.cube.position.x += speed;
-            camera.position.x = this.cube.position.x-50;
-            camera.lookAt(this.cube.position.x,this.cube.position.y,this.cube.position.z);
             break;
         }
 

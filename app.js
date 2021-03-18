@@ -46,4 +46,4 @@ app.get("/",(req,res)=>{
     res.sendFile("index.html");
 });
 
-server.listen(process.env.PORT);
+server.listen(3000);
