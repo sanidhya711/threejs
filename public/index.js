@@ -62,7 +62,7 @@ class Cube{
 
     setPosition(positionX,positionY,positionZ){
         this.idealPosition = new THREE.Vector3(positionX,positionY,positionZ);
-        this.currentPosition = new THREE.Vector3();
+        this.currentPosition = this.cube.position;
         this.currentPosition.lerp(this.idealPosition,0.2);
         this.cube.position.copy(this.currentPosition);
         this.cube.position.x = positionX;
