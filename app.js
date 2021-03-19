@@ -27,7 +27,6 @@ io.on('connection', socket => {
             z:data.z,
             username:socket.username
         }
-        console.log(cubes);
         var dataToEmit = {
             x:data.x,
             y:data.y,
