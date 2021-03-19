@@ -25,8 +25,9 @@ io.on('connection', socket => {
             x:data.x,
             y:data.y,
             z:data.z,
-            username:socket.usernamse
+            username:socket.username
         }
+        console.log(cubes);
         var dataToEmit = {
             x:data.x,
             y:data.y,
@@ -46,4 +47,4 @@ app.get("/",(req,res)=>{
     res.sendFile("index.html");
 });
 
-server.listen(process.env.PORT);
+server.listen(3000);
