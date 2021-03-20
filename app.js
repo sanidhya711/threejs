@@ -17,7 +17,6 @@ io.on('connection', socket => {
     socket.broadcast.emit("newCube",usernames);
 
     socket.emit("username",usernames);
-    console.log(cubes);
     socket.emit("positions",cubes);
     usernames++;
 

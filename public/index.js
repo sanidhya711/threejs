@@ -6,7 +6,6 @@ const socket = io();
 var cubes = {};
 
 socket.on("newCube", username => {
-    console.log(username);
     cubes[username] = new Cube(0,5,0);
 });
 
@@ -22,7 +21,6 @@ socket.on("handle key events",data=>{
     }else{
         cubes[data.username].keyReleased(data.key);
     }
-    console.log(data);
 });
 
 var scene,renderer,camera,controls,thirdPersonCamera,userCube;
@@ -218,7 +216,6 @@ window.addEventListener('keyup', keyUp);
 trackUserMovements();
 
 socket.on("disconnected",data=>{
-    console.log(data);
     cubes[data].remove();
 });
 
@@ -257,11 +254,13 @@ function handleBlur(event){
 }
 
 function sendMessage(eve){
-    if(eve.keyCode == 13 &&  document.querySelector(".chatbox input").value!=""){
-        var message = document.querySelector(".chatbox input").value;
-        document.querySelector(".chatbox input").value = "";
+    if(eve.keyCode == 13){
         document.querySelector(".chatbox input").blur();
-        socket.emit("message",{message:message});
+        if(document.querySelector(".chatbox input").value!=""){
+            var message = document.querySelector(".chatbox input").value;
+            document.querySelector(".chatbox input").value = "";
+            socket.emit("message",{message:message});
+        }
     }
 }
 
