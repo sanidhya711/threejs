@@ -13,6 +13,10 @@ io.on('connection', socket => {
         io.emit("message",{message:data.message,username:socket.username});
     });
 
+    socket.on("repositionCubes",data=>{
+        socket.emit("repositionCubes",cubes);
+    });
+
     socket.username = usernames;
     socket.broadcast.emit("newCube",usernames);
 
@@ -25,6 +29,10 @@ io.on('connection', socket => {
             x:data.x,
             y:data.y,
             z:data.z,
+            w:data.w,
+            a:data.a,
+            s:data.s,
+            d:data.d,
             username:socket.username
         }
     });

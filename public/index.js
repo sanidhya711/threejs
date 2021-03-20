@@ -4,6 +4,7 @@ import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/cont
 
 const socket = io();
 var cubes = {};
+var colors = [0xc9e069,0x7c97c2,0xc453cf,0xcf5353,0x3f4d49,0x73f6ff];
 
 socket.on("newCube", username => {
     cubes[username] = new Cube(0,5,0);
@@ -11,7 +12,7 @@ socket.on("newCube", username => {
 
 socket.on("positions",data=>{
     Object.keys(data).forEach(function(key){
-        cubes[data[key].username] = new Cube(data[key].x,data[key].y,data[key].z);
+        cubes[data[key].username] = new Cube(data[key].x,data[key].y,data[key].z,data[key].w,data[key].a,data[key].s,data[key].d,);
     });
 });
 
@@ -26,23 +27,22 @@ socket.on("handle key events",data=>{
 var scene,renderer,camera,controls,thirdPersonCamera,userCube;
 var keyboard = {};
 var speed = 0.3;
-var cubeMaterial = new THREE.MeshBasicMaterial({wireframe:true});
 var cubeGeometry = new THREE.BoxGeometry(10,10,10,3,3,3);
 
 class Cube{
-    constructor(positionX,positionY,positionZ){
+    constructor(positionX,positionY,positionZ,w,a,s,d){
         this.positionX = positionX;
         this.positionY = positionY;
         this.positionZ = positionZ;
-
         this.keyboard = {
-            w:false,
-            a:false,
-            s:false,
-            d:false
+            w:w,
+            a:a,
+            s:s,
+            d:d
         }
-
-        this.cube = new THREE.Mesh(cubeGeometry,cubeMaterial);
+        var random = Math.floor(Math.random() * 6);
+        this.cubeMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:colors[random]});
+        this.cube = new THREE.Mesh(cubeGeometry,this.cubeMaterial);
         this.cube.position.set(positionX,positionY,positionZ);
         scene.add(this.cube);
     }
@@ -110,8 +110,10 @@ class Cube{
         }
     }
 
-    remove(){
-        scene.remove(this.cube);
+    setPosition(x,y,z){
+        this.cube.position.x = x;
+        this.cube.position.y = y;
+        this.cube.position.z = z;
     }
 
     get Position() {
@@ -120,6 +122,10 @@ class Cube{
     
     get Rotation() {
         return this.cube.quaternion;
+    }
+
+    remove(){
+        scene.remove(this.cube);
     }
 }
 
@@ -175,7 +181,7 @@ function trackUserMovements(){
         dirty = true;
 	}
     if(dirty){
-        socket.emit("position",{x:userCube.getPosition().x,y:userCube.getPosition().y,z:userCube.getPosition().z});
+        socket.emit("position",{x:userCube.getPosition().x,y:userCube.getPosition().y,z:userCube.getPosition().z,w:keyboard[87],a:keyboard[65],s:keyboard[83],d:keyboard[68],});
         dirty = false;
     }
     requestAnimationFrame(trackUserMovements);
@@ -275,10 +281,12 @@ socket.on("message",data=>{
 document.addEventListener('visibilitychange', function(){
    if(document.visibilityState=="hidden"){
        keyboard = {};
-    socket.emit("handle key events",{key:65,pressed:false});
-    socket.emit("handle key events",{key:68,pressed:false});
-    socket.emit("handle key events",{key:83,pressed:false});
-    socket.emit("handle key events",{key:87,pressed:false});
+        socket.emit("handle key events",{key:65,pressed:false});
+        socket.emit("handle key events",{key:68,pressed:false});
+        socket.emit("handle key events",{key:83,pressed:false});
+        socket.emit("handle key events",{key:87,pressed:false});
+   }else{
+        repositionCubes();
    }
 });
 
@@ -288,6 +296,17 @@ function resetKeyboard(){
     socket.emit("handle key events",{key:68,pressed:false});
     socket.emit("handle key events",{key:83,pressed:false});
     socket.emit("handle key events",{key:87,pressed:false});
+}
+
+function repositionCubes(){
+    socket.emit("repositionCubes",true);
+    socket.on("repositionCubes",data=>{
+        Object.keys(data).forEach(function(key){
+            if(cubes[data[key].username]){
+                cubes[data[key].username].setPosition(data[key].x,data[key].y,data[key].z);
+            }
+        });
+    });
 }
 
 window.addEventListener('blur',resetKeyboard);
