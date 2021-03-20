@@ -10,13 +10,14 @@ var cubes = {}
 io.on('connection', socket => {
 
     socket.on("message",data=>{
-        io.emit("message",data);
+        io.emit("message",{message:data.message,username:socket.username});
     });
 
     socket.username = usernames;
     socket.broadcast.emit("newCube",usernames);
 
     socket.emit("username",usernames);
+    console.log(cubes);
     socket.emit("positions",cubes);
     usernames++;
 
@@ -27,13 +28,10 @@ io.on('connection', socket => {
             z:data.z,
             username:socket.username
         }
-        var dataToEmit = {
-            x:data.x,
-            y:data.y,
-            z:data.z,
-            username:socket.username
-        }
-        socket.broadcast.emit("cubeMoved",dataToEmit);
+    });
+
+    socket.on("handle key events",data=>{
+        socket.broadcast.emit("handle key events",{username:socket.username,key:data.key,pressed:data.pressed});
     });
 
     socket.on('disconnect',() => {
@@ -46,4 +44,4 @@ app.get("/",(req,res)=>{
     res.sendFile("index.html");
 });
 
-server.listen(process.env.PORT);
+server.listen(3000);

@@ -1,14 +1,12 @@
 import * as THREE from 'https://unpkg.com/three@0.126.1/build/three.module.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/controls/OrbitControls.js';
+(function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 
-// (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
 const socket = io();
-
-var username;
-
 var cubes = {};
 
 socket.on("newCube", username => {
+    console.log(username);
     cubes[username] = new Cube(0,5,0);
 });
 
@@ -18,12 +16,13 @@ socket.on("positions",data=>{
     });
 });
 
-socket.on("cubeMoved",data=>{
-    cubes[data.username].setPosition(data.x,data.y,data.z);
-});
-
-socket.on("username",data=>{
-    username = data;
+socket.on("handle key events",data=>{
+    if(data.pressed){
+        cubes[data.username].keyPressed(data.key);
+    }else{
+        cubes[data.username].keyReleased(data.key);
+    }
+    console.log(data);
 });
 
 var scene,renderer,camera,controls,thirdPersonCamera,userCube;
@@ -37,6 +36,13 @@ class Cube{
         this.positionX = positionX;
         this.positionY = positionY;
         this.positionZ = positionZ;
+
+        this.keyboard = {
+            w:false,
+            a:false,
+            s:false,
+            d:false
+        }
 
         this.cube = new THREE.Mesh(cubeGeometry,cubeMaterial);
         this.cube.position.set(positionX,positionY,positionZ);
@@ -60,18 +66,50 @@ class Cube{
         }
     }
 
-    setPosition(positionX,positionY,positionZ){
-        this.idealPosition = new THREE.Vector3(positionX,positionY,positionZ);
-        this.currentPosition = this.cube.position;
-        this.currentPosition.lerpVectors(this.currentPosition,this.idealPosition,0.2);
-        this.cube.position.copy(this.currentPosition);
-        this.cube.position.x = positionX;
-        this.cube.position.y = positionY;
-        this.cube.position.z = positionZ;
-    }  
-
     getPosition(){
         return this.cube.position;
+    }
+
+    keyPressed(key){
+        switch(key){
+            case 87: this.keyboard["w"] = true;
+            break;
+            case 83: this.keyboard["a"] = true;
+            break;
+            case 65: this.keyboard["s"] = true;
+            break;
+            case 68: this.keyboard["d"] = true;
+            break;
+        }
+        
+    }
+
+    keyReleased(key){
+        switch(key){
+            case 87: this.keyboard["w"] = false;
+            break;
+            case 83: this.keyboard["a"] = false;
+            break;
+            case 65: this.keyboard["s"] = false;
+            break;
+            case 68: this.keyboard["d"] = false;
+            break;
+        }
+    }
+
+    update(){
+        if(this.keyboard.w){
+            this.move("w");
+        }
+        if(this.keyboard.a){
+            this.move("s");
+        }
+        if(this.keyboard.s){
+            this.move("a");
+        }
+        if(this.keyboard.d){
+            this.move("d");
+        }
     }
 
     remove(){
@@ -86,6 +124,186 @@ class Cube{
         return this.cube.quaternion;
     }
 }
+
+function init(){
+    var WIDTH = window.innerWidth,HEIGHT = window.innerHeight;
+
+    scene = new THREE.Scene();
+
+    renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(WIDTH,HEIGHT);
+    renderer.setClearColor(0x333F47,1);
+    document.body.appendChild(renderer.domElement);
+
+    camera = new THREE.PerspectiveCamera(45,WIDTH/HEIGHT,1,10000);
+    camera.position.set(0,15,60);
+    camera.lookAt(0,0,0);
+    scene.add(camera);
+
+    var material = new THREE.MeshBasicMaterial({wireframe:true,color:"black"});
+
+    var floorGeometry = new THREE.PlaneGeometry(200,200,20,20);
+    var floor = new THREE.Mesh(floorGeometry,material);
+    floor.rotation.x = Math.PI/2;
+    scene.add(floor);
+
+    controls = new OrbitControls(camera,renderer.domElement);
+    controls.minDistance = 10;
+    controls.maxDistance = 275;
+
+    userCube = new Cube(0,5.5,0);
+    animate();
+}
+
+init();
+
+var dirty = true;
+
+function trackUserMovements(){
+    if(keyboard[87]){ 
+		userCube.move("w");
+        dirty = true;
+	}
+	if(keyboard[83]){ 
+		userCube.move("s");
+        dirty = true;
+	}
+	if(keyboard[65]){ 
+		userCube.move("a");
+        dirty = true;
+	}
+	if(keyboard[68]){
+		userCube.move("d");
+        dirty = true;
+	}
+    if(dirty){
+        socket.emit("position",{x:userCube.getPosition().x,y:userCube.getPosition().y,z:userCube.getPosition().z});
+        dirty = false;
+    }
+    requestAnimationFrame(trackUserMovements);
+}
+
+function updatePositions(){
+    Object.keys(cubes).forEach(function(cube){
+        cubes[cube].update();
+    });
+    requestAnimationFrame(updatePositions);
+}
+
+updatePositions();
+
+function keyDown(event){
+    if(event.keyCode == 13){
+        document.querySelector(".chatbox input").focus();
+    }
+    keyboard[event.keyCode] = true;
+    if(event.keyCode == 65 || event.keyCode == 68 || event.keyCode == 83 || event.keyCode == 87){
+        socket.emit("handle key events",{key:event.keyCode,pressed:true});
+    }
+}
+function keyUp(event){
+    keyboard[event.keyCode] = false;
+    if(event.keyCode == 65 || event.keyCode == 68 || event.keyCode == 83 || event.keyCode == 87){
+        socket.emit("handle key events",{key:event.keyCode,pressed:false});
+    }
+}
+window.addEventListener('keydown', keyDown);
+window.addEventListener('keyup', keyUp);
+
+trackUserMovements();
+
+socket.on("disconnected",data=>{
+    console.log(data);
+    cubes[data].remove();
+});
+
+var previousT;
+
+function animate(){
+    controls.update();
+    if (previousT === null) {
+        previousT = t;
+    }
+    renderer.render(scene,camera);
+    requestAnimationFrame(animate);
+}
+
+
+//chat
+document.querySelector(".chatbox input").addEventListener("focus",function(eve){
+    window.removeEventListener('keydown',keyDown);
+    window.removeEventListener('keyup',keyUp);
+    window.addEventListener("keydown",sendMessage);
+    eve.stopPropagation();
+    window.addEventListener("click",handleBlur);
+});
+
+document.querySelector(".chatbox input").addEventListener("blur",function(){
+    window.addEventListener('keydown', keyDown);
+    window.addEventListener('keyup', keyUp);
+    window.removeEventListener("keydown",sendMessage);
+    window.removeEventListener("click",handleBlur);
+});
+
+function handleBlur(event){
+    if(event.target.nodeName == "CANVAS"){
+        document.querySelector(".chatbox input").blur();
+    }
+}
+
+function sendMessage(eve){
+    if(eve.keyCode == 13 &&  document.querySelector(".chatbox input").value!=""){
+        var message = document.querySelector(".chatbox input").value;
+        document.querySelector(".chatbox input").value = "";
+        document.querySelector(".chatbox input").blur();
+        socket.emit("message",{message:message});
+    }
+}
+
+socket.on("message",data=>{
+    var div = document.createElement("div");
+    div.className = "message"
+    div.innerText = data.username+":     "+data.message;
+    document.querySelector(".messages").appendChild(div);
+    document.querySelector(".messages").scrollTop =  document.querySelector(".messages").scrollHeight;
+});
+
+document.addEventListener('visibilitychange', function(){
+   if(document.visibilityState=="hidden"){
+       keyboard = {};
+        socket.emit("handle key events",{key:65,pressed:false});
+    socket.emit("handle key events",{key:68,pressed:false});
+    socket.emit("handle key events",{key:83,pressed:false});
+    socket.emit("handle key events",{key:87,pressed:false});
+   }
+});
+
+function resetKeyboard(){
+    keyboard = {};
+    socket.emit("handle key events",{key:65,pressed:false});
+    socket.emit("handle key events",{key:68,pressed:false});
+    socket.emit("handle key events",{key:83,pressed:false});
+    socket.emit("handle key events",{key:87,pressed:false});
+}
+
+window.addEventListener('blur',resetKeyboard);
+
+function resize(){
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+}
+
+window.addEventListener("resize",resize);
+
+
+
+
+
+
+
+
+
 
 // class ThirdPersonCamera {
 //     constructor(params) {
@@ -122,145 +340,3 @@ class Cube{
 //       this._camera.lookAt(this._currentLookat);
 //     }
 //   }
-
-
-function init(){
-    var WIDTH = window.innerWidth,HEIGHT = window.innerHeight;
-
-    scene = new THREE.Scene();
-
-    renderer = new THREE.WebGLRenderer({antialias:true});
-    renderer.setSize(WIDTH,HEIGHT);
-    renderer.setClearColor(0x333F47,1);
-    document.body.appendChild(renderer.domElement);
-
-    camera = new THREE.PerspectiveCamera(45,WIDTH/HEIGHT,1,10000);
-    camera.position.set(0,15,60);
-    camera.lookAt(0,0,0);
-    scene.add(camera);
-
-    var material = new THREE.MeshBasicMaterial({wireframe:true,color:"black"});
-
-    var floorGeometry = new THREE.PlaneGeometry(200,200,20,20);
-    var floor = new THREE.Mesh(floorGeometry,material);
-    floor.rotation.x = Math.PI/2;
-    scene.add(floor);
-
-    controls = new OrbitControls(camera,renderer.domElement);
-    controls.minDistance = 10;
-    controls.maxDistance = 275;
-
-    userCube = new Cube(0,5.5,0);
-    // thirdPersonCamera = new ThirdPersonCamera({camera:camera,target:userCube});
-
-
-    animate();
-}
-
-init();
-
-var dirty = true;
-
-function trackUserMovements(){
-    if(keyboard[87]){ 
-		userCube.move("w");
-        dirty = true;
-	}
-	if(keyboard[83]){ 
-		userCube.move("s");
-        dirty = true;
-	}
-	if(keyboard[65]){ 
-		userCube.move("a");
-        dirty = true;
-	}
-	if(keyboard[68]){
-		userCube.move("d");
-        dirty = true;
-	}
-    if(dirty){
-        dirty = false;
-        var x = userCube.getPosition().x;
-        var y = userCube.getPosition().y;
-        var z = userCube.getPosition().z;
-        socket.emit("position",{username:username,x:x,y:y,z:z});
-    }
-
-    requestAnimationFrame(trackUserMovements);
-}
-
-function keyDown(event){
-    if(event.keyCode == 13){
-        document.querySelector(".chatbox input").focus();
-    }
-    keyboard[event.keyCode] = true;
-}
-function keyUp(event){
-    keyboard[event.keyCode] = false;
-}
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
-
-trackUserMovements();
-
-socket.on("disconnected",data=>{
-    cubes[data].remove();
-});
-
-var previousT;
-
-function animate(){
-    controls.update();
-    if (previousT === null) {
-        previousT = t;
-    }
-    // thirdPersonCamera.Update(0.2);
-    renderer.render(scene,camera);
-    requestAnimationFrame(animate);
-}
-
-
-//chat
-document.querySelector(".chatbox input").addEventListener("focus",function(eve){
-    window.removeEventListener('keydown',keyDown);
-    window.removeEventListener('keyup',keyUp);
-    window.addEventListener("keydown",sendMessage);
-    eve.stopPropagation();
-    window.addEventListener("click",handleBlur);
-});
-
-document.querySelector(".chatbox input").addEventListener("blur",function(){
-    window.addEventListener('keydown', keyDown);
-    window.addEventListener('keyup', keyUp);
-    window.removeEventListener("keydown",sendMessage);
-    window.removeEventListener("click",handleBlur);
-});
-
-function handleBlur(event){
-    if(event.target.nodeName == "CANVAS"){
-        document.querySelector(".chatbox input").blur();
-    }
-}
-
-function sendMessage(eve){
-    if(eve.keyCode == 13 &&  document.querySelector(".chatbox input").value!=""){
-        var message = document.querySelector(".chatbox input").value;
-        document.querySelector(".chatbox input").value = "";
-        document.querySelector(".chatbox input").blur();
-        socket.emit("message",{message:message,username:username});
-    }
-}
-
-socket.on("message",data=>{
-    var div = document.createElement("div");
-    div.className = "message"
-    div.innerText = data.username+":     "+data.message;
-    document.querySelector(".messages").appendChild(div);
-    document.querySelector(".messages").scrollTop =  document.querySelector(".messages").scrollHeight;
-});
-
-document.addEventListener('visibilitychange', function(){
-   if(document.visibilityState=="hidden"){
-       keyboard = {};
-   }
-});
