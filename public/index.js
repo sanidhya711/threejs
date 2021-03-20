@@ -195,6 +195,11 @@ updatePositions();
 function keyDown(event){
     if(event.keyCode == 13){
         document.querySelector(".chatbox input").focus();
+        keyboard = {};
+        socket.emit("handle key events",{key:65,pressed:false});
+        socket.emit("handle key events",{key:68,pressed:false});
+        socket.emit("handle key events",{key:83,pressed:false});
+        socket.emit("handle key events",{key:87,pressed:false});
     }
     keyboard[event.keyCode] = true;
     if(event.keyCode == 65 || event.keyCode == 68 || event.keyCode == 83 || event.keyCode == 87){
@@ -271,7 +276,7 @@ socket.on("message",data=>{
 document.addEventListener('visibilitychange', function(){
    if(document.visibilityState=="hidden"){
        keyboard = {};
-        socket.emit("handle key events",{key:65,pressed:false});
+    socket.emit("handle key events",{key:65,pressed:false});
     socket.emit("handle key events",{key:68,pressed:false});
     socket.emit("handle key events",{key:83,pressed:false});
     socket.emit("handle key events",{key:87,pressed:false});
