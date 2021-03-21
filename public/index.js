@@ -4,7 +4,7 @@ import { OrbitControls } from 'https://unpkg.com/three@0.126.1/examples/jsm/cont
 
 const socket = io();
 var cubes = {};
-var colors = [0xc9e069,0x7c97c2,0xc453cf,0xcf5353,0x3f4d49,0x73f6ff];
+var colors = [0xc9e069,0xc453cf,0xcf5353,0x3f4d49,];
 
 socket.on("newCube", username => {
     cubes[username] = new Cube(0,5,0);
@@ -12,7 +12,7 @@ socket.on("newCube", username => {
 
 socket.on("positions",data=>{
     Object.keys(data).forEach(function(key){
-        cubes[data[key].username] = new Cube(data[key].x,data[key].y,data[key].z,data[key].w,data[key].a,data[key].s,data[key].d,);
+        cubes[data[key].username] = new Cube(data[key].x,data[key].y,data[key].z,data[key].w,data[key].a,data[key].s,data[key].d);
     });
 });
 
@@ -25,7 +25,12 @@ socket.on("handle key events",data=>{
 });
 
 var scene,renderer,camera,controls,thirdPersonCamera,userCube;
-var keyboard = {};
+var keyboard = {
+    83:false,
+    87:false,
+    65:false,
+    68:false
+};
 var speed = 0.3;
 var cubeGeometry = new THREE.BoxGeometry(10,10,10,3,3,3);
 
@@ -40,7 +45,7 @@ class Cube{
             s:s,
             d:d
         }
-        var random = Math.floor(Math.random() * 6);
+        var random = Math.floor(Math.random() * 5);
         this.cubeMaterial = new THREE.MeshBasicMaterial({wireframe:true,color:colors[random]});
         this.cube = new THREE.Mesh(cubeGeometry,this.cubeMaterial);
         this.cube.position.set(positionX,positionY,positionZ);

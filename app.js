@@ -39,7 +39,16 @@ io.on('connection', socket => {
 
     socket.on("handle key events",data=>{
         socket.broadcast.emit("handle key events",{username:socket.username,key:data.key,pressed:data.pressed});
-        cubes[socket.username][data.key] = data.pressed;
+        switch(data.key){
+            case 87: cubes[socket.username].w = data.pressed;
+            break;
+            case 83: cubes[socket.username].a = data.pressed;
+            break;
+            case 65: cubes[socket.username].s = data.pressed;
+            break;
+            case 68: cubes[socket.username].d = data.pressed;
+            break;
+        }
     });
 
     socket.on('disconnect',() => {
